@@ -19,7 +19,7 @@ html(lang="en")
       const myVideo = document.createElement('video');
       myVideo.muted = true;
 
-      var socket = io("https://localhost:3000/")
+      var socket = io()
         console.log("working")
         socket.on('connect', function(data) {
             socket.send('Hello.');
