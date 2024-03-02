@@ -23,6 +23,8 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+
+
 // Generate a unique room ID and redirect the user to that room
 app.get('/', (req, res) => {
   res.redirect(`/chat/${uuidV4()}`);
@@ -40,11 +42,13 @@ io.on('connection', socket => {
   socket.on('join-room', (roomId, userId) => {
     socket.join(roomId);
     console.log(`User ${userId} joined room ${roomId}`);
-    socket.broadcast.to(roomId).emit('user-connected', userId);
+    // Emit 'user-connected' event to all clients in the room except the current one
+    socket.to(roomId).emit('user-connected', userId);
 
     socket.on('disconnect', () => {
       console.log("User disconnected");
-      socket.broadcast.to(roomId).emit('user-disconnected', userId);
+      // Emit 'user-disconnected' event to all clients in the room except the current one
+      socket.to(roomId).emit('user-disconnected', userId);
     });
   });
 });
