@@ -98,5 +98,5 @@ html(lang="en")
       // Function to handle leaving the call
       document.getElementById('leave-call-button').addEventListener('click', () => {
           myStream.getTracks().forEach(track => track.stop()); // Stop all tracks in the stream
-          window.location.href = '/'; // Redirect to the homepage or any other desired location
+          window.location.href = '/leave-chat'; // Redirect to the homepage or any other desired location
       });
