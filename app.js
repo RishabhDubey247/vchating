@@ -42,8 +42,17 @@ io.on('connection', socket => {
   socket.on('join-room', (roomId, userId) => {
     socket.join(roomId);
     console.log(`User ${userId} joined room ${roomId}`);
-    // Emit 'user-connected' event to all clients in the room except the current one
-    socket.to(roomId).emit('user-connected', userId);
+
+    // Get the list of all clients in the room except the current one
+    const clientsInRoom = io.sockets.adapter.rooms.get(roomId);
+    const otherUsers = [...clientsInRoom].filter(socketId => socketId !== socket.id);
+
+    if (otherUsers.length > 0) {
+      // If there are other users in the room, establish a connection between them
+      const otherUserId = otherUsers[0]; // For simplicity, we'll just connect the current user to the first other user
+      socket.to(otherUserId).emit('connect-to-user', userId);
+      socket.emit('connect-to-user', otherUserId);
+    }
 
     socket.on('disconnect', () => {
       console.log("User disconnected");
