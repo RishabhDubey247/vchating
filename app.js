@@ -39,6 +39,10 @@ app.get('/chat/:room', (req, res) => {
   res.render('chat', { rooom });
 });
 
+app.get("/leave-chat", (req, res) => {
+  res.send("Thanks for joining")
+});
+
 // Socket.IO logic
 io.on('connection', socket => {
   console.log("A user connected");
