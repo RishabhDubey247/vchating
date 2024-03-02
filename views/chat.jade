@@ -54,6 +54,16 @@ html(lang="en")
               console.log("User connected: " + userId);
               connectToNewUser(userId, stream);
           });
+
+          socket.on('connect-to-user', otherUserId => {
+              console.log("Connecting to user:", otherUserId);
+              // Establish a connection with the other user
+              const call = myPeer.call(otherUserId, stream);
+              const video = document.createElement('video');
+              call.on('stream', userVideoStream => {
+                  addVideoStream(video, userVideoStream);
+              });
+          });
       }).catch(error => {
           console.error('Error accessing media devices:', error);
       });
