@@ -12,6 +12,9 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
+// Object to store active rooms
+const activeRooms = {};
+
 // Set up view engine
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
@@ -23,47 +26,36 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-
-
 // Generate a unique room ID and redirect the user to that room
 app.get('/', (req, res) => {
-  res.redirect(`/chat/${uuidV4()}`);
+  const roomId = uuidV4();
+  activeRooms[roomId] = true; // Mark the room as active
+  res.redirect(`/chat/${roomId}`);
 });
-
+let rooom = "85sfdshfdsfh324f";
 // Render the specified room
 app.get('/chat/:room', (req, res) => {
-  res.render('chat', { roomId: req.params.room });
+  console.log(activeRooms)
+  res.render('chat', { rooom });
 });
 
 // Socket.IO logic
-  io.on('connection', socket => {
-    console.log("A user connected");
-  
-    socket.on('join-room', (roomId, userId) => {
-      socket.join(roomId);
-      console.log(`User ${userId} joined room ${roomId}`);
-  
-      // Get the list of all clients in the room except the current one
-      const clientsInRoom = io.sockets.adapter.rooms.get(roomId);
-      console.log(clientsInRoom);
-      // Check if there are other users in the room
-      if (clientsInRoom && clientsInRoom.size > 1) {
-        // If there are other users in the room, establish a connection between them
-        clientsInRoom.forEach(socketId => {
-          if (socketId !== socket.id) {
-            // Emit 'connect-to-user' event to establish a connection between users
-            socket.to(socketId).emit('connect-to-user', userId);
-            socket.emit('connect-to-user', socketId);
-          }
-        });
-      }
-  
-      socket.on('disconnect', () => {
-        console.log("User disconnected");
-        // Emit 'user-disconnected' event to all clients in the room except the current one
-        socket.to(roomId).emit('user-disconnected', userId);
-      });
+io.on('connection', socket => {
+  console.log("A user connected");
+
+  socket.on('join-room', (rooom, userId) => {
+    socket.join(rooom);
+    console.log(`User ${userId} joined room ${rooom}`);
+
+    // Emit 'user-connected' event to all clients in the room except the current one
+    socket.to(rooom).emit('user-connected', userId);
+
+    socket.on('disconnect', () => {
+      console.log("User disconnected");
+      // Emit 'user-disconnected' event to all clients in the room except the current one
+      socket.to(rooom).emit('user-disconnected', userId);
     });
+  });
 });
 
 // Error handling
