@@ -32,35 +32,56 @@ app.get('/', (req, res) => {
   activeRooms[roomId] = true; // Mark the room as active
   res.redirect(`/chat/${roomId}`);
 });
-let rooom = "85sfdshfdsfh324f";
-// Render the specified room
+
+let joiningRoom = ""; 
+
+let rooom = ["85sfdshfdsfh324f","whjfghdghf","fjbhdjsvfhjdsvf"];
+
 app.get('/chat/:room', (req, res) => {
   console.log(activeRooms)
-  res.render('chat', { rooom });
+  res.render('chat', { joiningRoom });
 });
 
 app.get("/leave-chat", (req, res) => {
   res.send("Thanks for joining")
 });
 
-// Socket.IO logic
 io.on('connection', socket => {
   console.log("A user connected");
 
-  socket.on('join-room', (rooom, userId) => {
-    socket.join(rooom);
-    console.log(`User ${userId} joined room ${rooom}`);
+  function joinOrCreateRoom(userId) {
+      let availableRoom = null;
 
-    // Emit 'user-connected' event to all clients in the room except the current one
-    socket.to(rooom).emit('user-connected', userId);
+      for (let i = 0; i < rooom.length; i++) {
+          let users = io.sockets.adapter.rooms.get(rooom[i]);
+          if (!users || users.size < 2) {
+              availableRoom = rooom[i];
+              break;
+          }
+      }
 
-    socket.on('disconnect', () => {
-      console.log("User disconnected");
-      // Emit 'user-disconnected' event to all clients in the room except the current one
-      socket.to(rooom).emit('user-disconnected', userId);
-    });
+      if (!availableRoom) {
+          availableRoom = generateNewRoomName(); // Implement your logic for generating a new room name
+      }
+
+      socket.join(availableRoom);
+      joiningRoom = availableRoom ;
+      console.log("User joined room:", availableRoom);
+      let currentRoom = availableRoom;
+      io.to(currentRoom).emit('user-connected', { userId, roomId: currentRoom });
+
+      socket.on('disconnect', () => {
+          console.log("User disconnected");
+          socket.to(currentRoom).emit('user-disconnected', userId);
+      });
+  }
+  socket.on('join-room', (userId) => {
+    console.log("User joined room with:", userId);
+      joinOrCreateRoom(userId);
   });
 });
+
+
 
 // Error handling
 app.use(function(req, res, next) {
