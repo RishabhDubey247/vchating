@@ -54,7 +54,7 @@ io.on('connection', socket => {
 
       for (let i = 0; i < rooom.length; i++) {
           let users = io.sockets.adapter.rooms.get(rooom[i]);
-          if (!users || users.size < 2) {
+          if (!users || users.size < 10) {
               availableRoom = rooom[i];
               break;
           }
