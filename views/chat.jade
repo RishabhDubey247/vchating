@@ -59,7 +59,7 @@ html(lang="en")
     script(src="/socket.io/socket.io.js")
     script(src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.3.1/peerjs.min.js")
     script.
-      const ROOM_ID = "#{room}";
+      const ROOM_ID = "#{joiningRoom}";
       const videoGrid = document.getElementById('video-grid');
       const myPeer = new Peer();
       let myStream;
@@ -84,13 +84,13 @@ html(lang="en")
 
           const socket = io();
           socket.on('connect', () => {
-              console.log("Connected to server");
-              socket.emit('join-room', ROOM_ID, myPeer.id);
+              socket.emit('join-room', myPeer.id);
           });
 
-          socket.on('user-connected', userId => {
-              console.log("User connected: " + userId);
-              connectToNewUser(userId, stream);
+          socket.on('user-connected', data => {
+              console.log(data)
+              console.log("User connected: " + data.userId);
+              connectToNewUser(data.userId, stream);
           });
 
           socket.on('connect-to-user', otherUserId => {
