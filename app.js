@@ -35,7 +35,7 @@ app.get('/', (req, res) => {
 
 let joiningRoom = ""; 
 
-let rooom = ["85sfdshfdsfh324f","whjfghdghf","fjbhdjsvfhjdsvf"];
+let rooom = [];
 
 app.get('/chat/:room', (req, res) => {
   console.log(activeRooms)
@@ -54,14 +54,14 @@ io.on('connection', socket => {
 
       for (let i = 0; i < rooom.length; i++) {
           let users = io.sockets.adapter.rooms.get(rooom[i]);
-          if (!users || users.size < 10) {
+          if (!users || users.size < 2) {
               availableRoom = rooom[i];
               break;
           }
       }
 
       if (!availableRoom) {
-          availableRoom = generateNewRoomName(); // Implement your logic for generating a new room name
+          availableRoom = generateNewRoomName(userId); 
       }
 
       socket.join(availableRoom);
@@ -70,15 +70,33 @@ io.on('connection', socket => {
       let currentRoom = availableRoom;
       io.to(currentRoom).emit('user-connected', { userId, roomId: currentRoom });
 
+      socket.on('chat message', (msg) => {
+        console.log('message: ' + msg);
+      });
       socket.on('disconnect', () => {
           console.log("User disconnected");
           socket.to(currentRoom).emit('user-disconnected', userId);
+          let indexofrooom = rooom.indexOf(currentRoom);
+          console.log(indexofrooom);
+          if (indexofrooom !== -1) { 
+              rooom.splice(indexofrooom, 1);
+              console.log("Value", currentRoom, "deleted from array.");
+          } else {
+              console.log("Value", currentRoom, "not found in array.");
+          }
+          console.log(rooom);
       });
   }
   socket.on('join-room', (userId) => {
     console.log("User joined room with:", userId);
       joinOrCreateRoom(userId);
   });
+
+  function generateNewRoomName(userId) {
+    let newRoomId = uuidV4();
+    rooom.push(newRoomId);
+    joinOrCreateRoom(userId);
+ }
 });
 
 
