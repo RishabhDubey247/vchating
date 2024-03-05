@@ -3,13 +3,13 @@ html(lang="en")
   head
     meta(charset="UTF-8")
     meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css", integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO", crossorigin="anonymous")
     title Video Chat
     style.
       body {
         font-family: Arial, sans-serif;
         background-color: #f8f8f8;
-        margin: 0;
-        padding: 0;
+        max-height : 100vh;
       }
 
       h1 {
@@ -19,15 +19,19 @@ html(lang="en")
 
       #video-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        grid-template-rows: repeat(auto-fill, minmax(100px, 1fr));
         grid-gap: 10px;
         justify-content: center;
         align-items: center;
         margin: 20px auto;
-        max-width: 1000px;
+        max-width: 400px;
       }
 
-      video {
+      .video-container {
+        position: relative;
+      }
+
+      .video-container video {
         width: 100%;
         height: 100%;
         object-fit: cover;
@@ -35,7 +39,52 @@ html(lang="en")
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       }
 
-      button#leave-call-button {
+      #chatting-section {
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin-top: 20px;
+        height: 650px;
+      }
+
+      #chatting-section .messages-container {
+        height: calc(100% - 50px); /* Adjusted height */
+        overflow-y: auto;
+        margin-bottom: 10px;
+      }
+
+      #chatting-section .input-container {
+        display: flex;
+        align-items: flex-end; /* Align items at the bottom */
+      }
+
+      #chatting-section .input-container input[type="text"] {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 16px;
+        outline: none;
+      }
+
+      #chatting-section .input-container button {
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-left: 10px;
+        font-size: 12px;
+        outline: none;
+      }
+
+      #chatting-section .input-container button:hover {
+        background-color: #0056b3;
+      }
+
+      #leave-call-button {
         display: block;
         margin: 20px auto;
         padding: 10px 20px;
@@ -47,14 +96,28 @@ html(lang="en")
         transition: background-color 0.3s;
       }
 
-      button#leave-call-button:hover {
+      #leave-call-button:hover {
         background-color: #c82333;
       }
 
   body
-    h1 Video Chat
-    #video-grid
-    button#leave-call-button Leave Call
+    h1 Hello Guysss
+    .container 
+      .row  
+        .col-md-4
+          #video-grid
+        .col-md-8 
+          #chatting-section
+            .messages-container
+              // Messages will be displayed here
+              #chat-messages
+            .input-container
+              input(class="form-control", type="textarea", name="chatting-input", id="chatting-input", placeholder="hello.....")
+              span
+                button(type="button" class="btn btn-secondary", id="send-message", onclick="sendMessage()") Send
+        button#leave-call-button Leave Call
+
+
     script(src="https://code.jquery.com/jquery-1.6.2.min.js")
     script(src="/socket.io/socket.io.js")
     script(src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.3.1/peerjs.min.js")
@@ -63,10 +126,10 @@ html(lang="en")
       const videoGrid = document.getElementById('video-grid');
       const myPeer = new Peer();
       let myStream;
-
       const myVideo = document.createElement('video');
       myVideo.muted = true;
-
+      var socker ; 
+      
       navigator.mediaDevices.getUserMedia({
           video: true,
           audio: true
@@ -80,15 +143,20 @@ html(lang="en")
               call.on('stream', userVideoStream => {
                   addVideoStream(video, userVideoStream);
               });
+              call.on('close', () => {
+                  removeVideoContainer(video.parentElement);
+              });
+
           });
 
-          const socket = io();
+          socket = io()
+
           socket.on('connect', () => {
               socket.emit('join-room', myPeer.id);
           });
 
           socket.on('user-connected', data => {
-              console.log(data)
+              console.log(data);
               console.log("User connected: " + data.userId);
               connectToNewUser(data.userId, stream);
           });
@@ -100,6 +168,9 @@ html(lang="en")
               const video = document.createElement('video');
               call.on('stream', userVideoStream => {
                   addVideoStream(video, userVideoStream);
+              });
+              call.on('close', () => {
+                  removeVideoContainer(video.parentElement);
               });
           });
       }).catch(error => {
@@ -118,7 +189,7 @@ html(lang="en")
               addVideoStream(video, userVideoStream);
           });
           call.on('close', () => {
-              video.remove();
+              removeVideoContainer(video.parentElement);
           });
       }
 
@@ -127,9 +198,26 @@ html(lang="en")
           video.addEventListener('loadedmetadata', () => {
               video.play();
           });
-          videoGrid.appendChild(video);
+          const videoContainer = document.createElement('div');
+          videoContainer.classList.add('video-container');
+          videoContainer.appendChild(video);
+          videoGrid.appendChild(videoContainer);
       }
 
+      function removeVideoContainer(container) {
+        console.log(container)
+          if (container) {
+              container.remove();
+          }
+      }
+
+      function sendMessage(){
+        const message = document.getElementById('chatting-input')
+        const inputvalue = message.value;
+        console.log(inputvalue);
+        socket.emit('chat message', inputvalue);
+        message.value = '';
+      }
       // Function to handle leaving the call
       document.getElementById('leave-call-button').addEventListener('click', () => {
           myStream.getTracks().forEach(track => track.stop()); // Stop all tracks in the stream
