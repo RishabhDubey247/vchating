@@ -6,6 +6,10 @@ html(lang="en")
     link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css", integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO", crossorigin="anonymous")
     title Video Chat
     style.
+      * {
+        margin : 0 ;
+        padding : 0 ;
+      }
       body {
         font-family: Arial, sans-serif;
         background-color: #f8f8f8;
@@ -14,17 +18,16 @@ html(lang="en")
 
       h1 {
         text-align: center;
-        margin-top: 20px;
       }
 
       #video-grid {
         display: grid;
-        grid-template-rows: repeat(auto-fill, minmax(100px, 1fr));
+        grid-template-columns: repeat(2, 1fr); /* Display only two columns */
         grid-gap: 10px;
         justify-content: center;
         align-items: center;
         margin: 20px auto;
-        max-width: 400px;
+        width: 750px; 
       }
 
       .video-container {
@@ -84,6 +87,22 @@ html(lang="en")
         background-color: #0056b3;
       }
 
+      #mute-button {
+        isplay: block;
+        margin: 20px auto;
+        padding: 10px 20px;
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      #mute-button:hover {
+        background-color: #c82333;
+      }
+
       #leave-call-button {
         display: block;
         margin: 20px auto;
@@ -99,24 +118,40 @@ html(lang="en")
       #leave-call-button:hover {
         background-color: #c82333;
       }
-
+      #hide-video-button {
+        display: block;
+        margin: 20px auto;
+        padding: 10px 20px;
+        background-color: Tomato;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+      #hide-video-button:hover {
+         background-color: #c82333;
+      }
   body
-    h1 Hello Guysss
-    .container 
-      .row  
-        .col-md-4
-          #video-grid
-        .col-md-8 
-          #chatting-section
-            .messages-container
-              // Messages will be displayed here
-              #chat-messages
-            .input-container
-              input(class="form-control", type="textarea", name="chatting-input", id="chatting-input", placeholder="hello.....")
-              span
-                button(type="button" class="btn btn-secondary", id="send-message", onclick="sendMessage()") Send
-        button#leave-call-button Leave Call
-
+    div.main(style="background: linear-gradient(to right, #A46262, #7E6EAA,brown); padding-top: 15px; padding-bottom: 15px")
+      h1 Hello Guysss
+      .container
+        .row
+          .col-md-4
+            #video-grid
+              // Video Grid Blocks
+            div.d-flex
+              button#mute-button Mute
+              button#hide-video-button Hide Video
+              button#leave-call-button Leave Call
+          .col-md-8
+            #chatting-section
+              .messages-container#chat-messages
+                // Messages will be displayed here
+              .input-container
+                input.form-control(type="text", name="chatting-input", id="chatting-input", placeholder="Type your message...")
+                span
+                  button.btn.btn-secondary(type="button", id="send-message", onclick="sendMessage()") Send
 
     script(src="https://code.jquery.com/jquery-1.6.2.min.js")
     script(src="/socket.io/socket.io.js")
@@ -128,7 +163,7 @@ html(lang="en")
       let myStream;
       const myVideo = document.createElement('video');
       myVideo.muted = true;
-      var socker ; 
+      var socket; 
       
       navigator.mediaDevices.getUserMedia({
           video: true,
@@ -182,15 +217,15 @@ html(lang="en")
       });
 
       function connectToNewUser(userId, stream) {
-          console.log("Calling new user:", userId);
-          const call = myPeer.call(userId, stream);
-          const video = document.createElement('video');
-          call.on('stream', userVideoStream => {
-              addVideoStream(video, userVideoStream);
-          });
-          call.on('close', () => {
-              removeVideoContainer(video.parentElement);
-          });
+        console.log("Calling new user:", userId);
+        const call = myPeer.call(userId, stream);
+        const video = document.createElement('video');
+        call.on('stream', userVideoStream => {
+            addVideoStream(video, userVideoStream);
+        });
+        call.on('close', () => {
+            removeVideoContainer(video.parentElement);
+        });
       }
 
       function addVideoStream(video, stream) {
@@ -218,6 +253,27 @@ html(lang="en")
         socket.emit('chat message', inputvalue);
         message.value = '';
       }
+
+      // Mute button functionality
+      document.getElementById('mute-button').addEventListener('click', () => {
+        const tracks = myStream.getAudioTracks();
+        tracks.forEach(track => {
+          track.enabled = !track.enabled;
+        });
+        const muteButton = document.getElementById('mute-button');
+        muteButton.textContent = muteButton.textContent === 'Mute' ? 'Unmute' : 'Mute';
+      });
+
+      // Hide video button functionality
+      document.getElementById('hide-video-button').addEventListener('click', () => {
+        const tracks = myStream.getVideoTracks();
+        tracks.forEach(track => {
+          track.enabled = !track.enabled;
+        });
+        const hideVideoButton = document.getElementById('hide-video-button');
+        hideVideoButton.textContent = hideVideoButton.textContent === 'Hide Video' ? 'Show Video' : 'Hide Video';
+      });
+
       // Function to handle leaving the call
       document.getElementById('leave-call-button').addEventListener('click', () => {
           myStream.getTracks().forEach(track => track.stop()); // Stop all tracks in the stream
